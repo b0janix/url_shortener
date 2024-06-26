@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+    nginx:
+        image: nginx:alpine
+        container_name: url_shortener_server
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "8000:80"
+        volumes:
+           - ./:/var/www
+           - ./nginx/conf.d/:/etc/nginx/conf.d/
+        depends_on:
+            - app
+            - mysql
+        networks:
+           - app_network
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        volumes:
+            - ./:/var/www
+        container_name: url_shortener_app
+        networks:
+            - app_network
+    mysql:
+        image: mysql:8.0.1
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+        tty: true
+        container_name: url_shortener_database
+        ports:
+            - "3306:3306"
+        networks:
+            - app_network
+        volumes:
+            - /opt/mysql_data:/var/lib/mysql
+    mysql_test:
+        image: mysql:8.0.1
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+        tty: true
+        container_name: url_shortener_test_database
+        ports:
+            - "33006:3306"
+        networks:
+            - app_network
+networks:
+    app_network:
+        driver: bridge
